@@ -4,8 +4,10 @@ const Employee = require('./lib/Employee')
 const Manager = require('./lib/Manager')
 const Engineer = require('./lib/Engineer')
 const Intern = require('./lib/Intern')
+const team = []
+//manager prompt name, id, email, officeNumber
 
-const promptUser = () => {
+    const managerPrompt = () => {
     return inquirer.prompt([
         {
         type: 'input',
@@ -23,7 +25,7 @@ const promptUser = () => {
         {
             type: 'number',
             name: 'employeeid',
-            message: 'Team member id number:',
+            message: 'Manager id number:',
             validate: isNumber => {
                 if (isNumber) {
                     return true;
@@ -36,7 +38,7 @@ const promptUser = () => {
         {
             type: 'input',
             name: 'email',
-            message: 'Team member email:',
+            message: "Team manager's email:",
             validate: isEmail => {
                 if (isEmail) {
                     return true;
@@ -50,57 +52,96 @@ const promptUser = () => {
             name: 'officeNumber',
             message: "Please enter manager's office number:"
         },
-        {
-            type: 'confirm',
-            name: 'addMore',
-            message: 'Would you like to add another team member?',
-            default: true
-        },
-        {
-            type: 'list',
-            name: 'role',
-            message: 'New team member role: ',
-            choices: [
-                "Engineer",
-                "Intern"
-            ]
-        }
     ])
-    .then((teamMemberInput) => {
-        if (teamMemberInput.addMore === false) {
-        return geneneratePage()
-    } else if (teamMemberInput.role === 0) {
+    .then((managerPromptInput) => {
+        team.push(managerPromptInput);
+        console.log(managerPromptInput);
+    })
+}
+//all other employee's inq prompts confirmAdd, role, name, id, email, school or gitHub
+const employeePrompt = () => {
+    console.log(`
+    =================
+    Adding employees to the team
+    =================
+    `);
+    return inquirer.prompt([
+{
+    type: 'confirm',
+    name: 'addMore',
+    message: 'Would you like to add another team member?',
+    default: true
+},
+{
+    type: 'list',
+    name: 'role',
+    message: 'New team member role: ',
+    choices: [
+        "Engineer",
+        "Intern",
+        "Done"
+    ]
+},
+{
+    type: 'input',
+    name: 'employee name',
+    message: "Employee name: "
+},
+{
+    type: 'input',
+    name: 'employeeid',
+    message: 'Employee ID:'
+},
+{
+    type: 'input',
+    name: 'employee email',
+    message: 'Employee email address: '
+}
+    ])
+    //redirects to either engineer,intern or done question
+    .then((employeePromptInput) => {
+        if (employeePromptInput.role === 1) {
+        return inquirer.prompt([
+            {
+                type: 'input',
+                name: 'school',
+                message: "Intern's school: "
+            }
+        ])  
+    } else if (employeePromptInput.role === 0) {
         return inquirer.prompt([
             {
                 type: 'input',
                 name: 'gitHub',
                 message: "Engineer's gitHub account: "
             }
-        ])} else return inquirer.prompt([
-            {
-                type: 'input',
-                name: 'school',
-                message: "Intern's school: "
-            }
-        ])   
+        ])} else return team
     })
-    .then(teamMemberInput => {
-        team.teamMembers.push(teamMemberInput)
-        if (teamMemberInput.confirmAdddTeamMember) {
-            return promptUser(team)
-        } else {
-            return (team)
-        }
-        
-}),
 
+    .then((employeePromptInput) => {
+        team.push(employeePromptInput);
+        console.log(employeePromptInput);
+    })
+}
 
-function writeToFile(fileName, data) {
-    fs.writeFile(fileName, data, err => {
+const writeFile = (answers) => {
+    fs.writeFile('./dist/renderedoutput.html', answers, err => {
         if (err) {
             return console.log(err);
+        } else {
+            console.log("Your team profile has been successfully created! Please check out the index.html")
         }
     })
-    
 }
-promptUser()}
+
+managerPrompt()
+    .then(employeePrompt)
+    .then(team => {
+        return templateHelper (team);
+    })
+    .then(renderedoutput => {
+        return writeFile(renderedoutput);
+    })
+    .catch(err => {
+        console.log(err)
+    })
